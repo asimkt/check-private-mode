@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Check private mode</title>
+    <script>
+        function isPrivateMode() {
+  return new Promise(resolve => {
+    const on = () => resolve(true); // is in private mode
+    const off = () => resolve(false); // not private mode
+    const testLocalStorage = () => {
+      try {
+        if (!localStorage.length) {
+          localStorage.i = 1;
+          localStorage.removeItem('i');
+        }
+        off();
+      } catch (e) {
+        // Safari only enables cookie in private mode
+        // if cookie is disabled then all client side storage is disabled
+        // if all client side storage is disabled, then there is no point
+        // in using private mode
+        if (navigator.cookieEnabled) { on() } else { off() }
+      }
+    };
+    
+    // Chrome & Opera
+    if (window.webkitRequestFileSystem) {
+      alert('Chrome');
+      window.webkitRequestFileSystem(window.TEMPORARY, 1, off, on);
+      return;
+    }
+    
+    // Firefox
+    if ( /Firefox/.test(window.navigator.userAgent) || 'MozAppearance' in document.documentElement.style) {
+      alert('Firefox');
+      const db = window.indexedDB.open('test');
+      db.onerror = on;
+      db.onsuccess = off;
+      return;
+      // if (!window.navigator.serviceWorker) { return on(); }
+    }
+    
+    // IE10+ & Edge
+    if (/Edge/.test(window.navigator.userAgent) || (window.PointerEvent || window.MSPointerEvent)) {
+      alert('Edge');
+      if (window.indexedDB) { return off(); } else { return on(); }
+    }
+    
+    // Safari
+    if (/Safari/.test(window.navigator.userAgent)) {
+      alert('Safari' + window.navigator.userAgent);
+      try {
+        window.openDatabase(null, null, null, null);
+        return off();
+      } catch (_) {
+        return on();
+      }
+      // Older Safari
+      return testLocalStorage();
+    }
+    
+    // Others
+    return off();
+  });
+}
+
+function showAlert(isPrivateMode) {
+  if (isPrivateMode) {
+    alert('Private Mode Detected!!');
+  } else {
+    alert('You are not in Private Mode!!');
+  }
+}
+
+isPrivateMode().then(showAlert);
+    </script>
+</head>
+<body>
+    
+</body>
+</html>
